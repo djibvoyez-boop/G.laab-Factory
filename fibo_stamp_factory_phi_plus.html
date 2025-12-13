@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fibo Stamp Factory — φ + compositeur esthétique (extended)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--bg:#C3CBC0;--panel:#EBEBEB;--fg:#9EA39D;--muted:#9EA39D;--acc:#C3CBC0}
+*{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,Arial}
+.wrap{max-width:980px;margin:28px auto;padding:20px;background:var(--panel);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+h1{margin:0 0 10px;font-size:22px}
+p{margin:6px 0 14px;color:var(--muted)}
+.controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+label{display:flex;flex-direction:column;font-size:13px;color:var(--muted);gap:6px}
+input,select{background:#C3CBC0;border:1px solid #9EA39D;color:#9EA39D;border-radius:10px;padding:10px}
+input[type="file"]{padding:8px;background:#C3CBC0;border:1px dashed #9EA39D}
+select[multiple]{height:142px}
+.row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}
+.primary{background:var(--acc);color:#9EA39D}
+.ghost{background:#D0B1AE;color:#ECECEC}
+small{color:var(--muted)}
+.thumbs{margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+canvas{width:100%;height:auto;background:transparent;border-radius:8px}
+.badge{display:inline-block;background:#C3CBC0;border:1px solid #9EA39D;color:#9EA39D;padding:3px 7px;border-radius:999px;font-size:12px}
+a{color:var(--acc);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fibo Stamp Factory <span class="badge">PNG de base • φ • compositeur (extended)</span></h1>
+  <p>Charge <b>ton PNG de base</b>. Choisis un <b>arrangement</b> ou <b>Compositeur esthétique</b> pour mixer plusieurs motifs harmonisés (φ, espacement, variations).</p>
+
+  <div class="controls">
+    <label>PNG de base (obligatoire)
+      <input id="base" type="file" accept="image/png,image/svg+xml,image/*">
+    </label>
+    <label>Nombre d’images
+      <input id="count" type="number" min="1" max="200" value="24">
+    </label>
+    <label>Taille (px)
+      <input id="size" type="number" min="512" max="4096" step="64" value="1600">
+    </label>
+    <label>Format
+      <select id="format">
+        <option selected value="png">PNG (transparent)</option>
+        <option value="svg">SVG</option>
+      </select>
+    </label>
+
+    <label>Arrangements (Ctrl/Cmd+clic)
+      <select id="types" multiple>
+        <!-- existants -->
+        <option selected value="grid">Grille (tuilage)</option>
+        <option selected value="rosette4">Rosette ×4</option>
+        <option selected value="pinwheel">Pinwheel ×4</option>
+        <option selected value="mirror">Duo miroir</option>
+        <option selected value="random">Aléatoire centré</option>
+        <!-- nouveaux -->
+        <option value="radial6">Radial ×6</option>
+        <option value="radial8">Radial ×8</option>
+        <option value="diagMirror">Miroir diagonal</option>
+        <option value="imperfectMirror">Miroir imparfait</option>
+        <option value="hexgrid">Grille hexagonale</option>
+        <option value="vortex">Vortex (rotation progressive)</option>
+        <option value="orbits">Orbits concentriques</option>
+        <option value="sinepath">Chemin sinusoïdal</option>
+        <option value="brokenGrid">Grille brisée</option>
+        <option value="offset">Overlay décalé</option>
+        <option value="glitch">Glitch doux</option>
+        <option value="scaleRamp">Échelle progressive (zoom)</option>
+        <option value="fiboSpiral">Spirale de Fibonacci</option>
+        <option value="logSpiral">Spirale logarithmique</option>
+         
+        <!-- compositeur -->
+        <option selected value="composer">Compositeur esthétique (φ)</option>
+      </select>
+    </label>
+    <label>Tampons / image
+      <input id="stampsPer" type="number" min="3" max="80" value="16">
+    </label>
+    <label>Miroir aléatoire
+      <select id="mirrorMode">
+        <option value="none">Jamais</option>
+        <option value="some" selected>Parfois</option>
+        <option value="always">Toujours</option>
+      </select>
+    </label>
+    <label>Guides (cadre fin)
+      <select id="guides">
+        <option selected value="none">Sans</option>
+        <option value="frame">Cadre</option>
+        <option value="gridlight">Quadrillage léger</option>
+      </select>
+    </label>
+
+    <label>Mode φ
+      <select id="phiMode">
+        <option value="off">Désactivé</option>
+        <option value="snap" selected>Accrochage φ</option>
+        <option value="strict">Strict φ</option>
+      </select>
+    </label>
+    <label>Rigueur φ (1–6)
+      <input id="phiPower" type="number" min="1" max="6" value="3">
+    </label>
+    <label>Esthétique (espacement)
+      <select id="esthetic">
+        <option value="on" selected>Activé</option>
+        <option value="off">Désactivé</option>
+      </select>
+    </label>
+    <label>Espacement min
+      <input id="minDist" type="number" step="0.01" min="0" max="0.6" value="0.18">
+    </label>
+
+    <label>Échelle min
+      <input id="scaleMin" type="number" step="0.05" min="0.2" max="3" value="0.55">
+    </label>
+    <label>Échelle max
+      <input id="scaleMax" type="number" step="0.05" min="0.3" max="3" value="1.35">
+    </label>
+    <label>Seed (optionnel)
+      <input id="seed" type="number" placeholder="aléatoire">
+    </label>
+    <label>Marge (0–0.2)
+      <input id="margin" type="number" step="0.01" min="0" max="0.2" value="0.05">
+    </label>
+  </div>
+
+  <div class="row">
+    <button class="primary" id="go">Générer</button>
+    <button class="ghost" id="zip" disabled>Télécharger le .zip</button>
+    <span id="status"><small>Prêt.</small></span>
+  </div>
+
+  <div class="thumbs" id="thumbs"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+<script>
+/*** util + φ ***/
+function rngSeed(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+const rr=(r,a,b)=>a+(b-a)*r(), pick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+const PHI=(1+Math.sqrt(5))/2, GOLD=2*Math.PI*(1-1/PHI);
+const phiScale=(r,lo,hi)=>{const n0=Math.ceil(Math.log(lo)/Math.log(PHI)), n1=Math.floor(Math.log(hi)/Math.log(PHI)); const n=n0+Math.floor(r()*Math.max(1,n1-n0+1)); return Math.pow(PHI,n)};
+const snapPhi=(x,p)=>{const s=1/Math.pow(PHI,p); return Math.round(x/s)*s};
+
+/*** matrices ***/
+function mat(a,b,c,d,e,f){return {a,b,c,d,e,f}}
+function mul(A,B){return mat(A.a*B.a+A.c*B.b, A.b*B.a+A.d*B.b, A.a*B.c+A.c*B.d, A.b*B.c+A.d*B.d, A.a*B.e+A.c*B.f+A.e, A.b*B.e+A.d*B.f+A.f)}
+const rot=t=>mat(Math.cos(t),Math.sin(t),-Math.sin(t),Math.cos(t),0,0);
+const scl=s=>mat(s,0,0,s,0,0), tr=(x,y)=>mat(1,0,0,1,x,y);
+
+/*** dessin du tampon ***/
+function drawStamp(ctx,img,M,W,H){
+  const iw=img.width, ih=img.height, s=1/Math.max(iw,ih); const MN=mul(M,scl(s));
+  ctx.save();
+  const A=MN.a*0.9*W, C=MN.c*0.9*W, B=-MN.b*0.9*H, D=-MN.d*0.9*H, E=(MN.e*0.9+0.5)*W, F=(0.5-MN.f*0.9)*H;
+  ctx.setTransform(A,B,C,D,E,F);
+  ctx.drawImage(img,-iw/2,-ih/2,iw,ih);
+  ctx.restore();
+}
+
+/*** anchors φ + espacement ***/
+function goldenAnchors(pow,margin){
+  const step=1/Math.pow(PHI,pow), a=[];
+  for(let x=-0.9+margin; x<=0.9-margin+1e-6; x+=step)
+    for(let y=-0.9+margin; y<=0.9-margin+1e-6; y+=step) a.push({x,y});
+  return a;
+}
+function pickSpaced(r, anchors, n, minD){
+  const sel=[], pool=[...anchors]; 
+  const ok=(p)=>sel.every(q=>Math.hypot(p.x-q.x,p.y-q.y)>=minD);
+  while(pool.length && sel.length<n){ const i=Math.floor(r()*pool.length); const p=pool[i]; if(ok(p)) sel.push(p); pool.splice(i,1); }
+  while(sel.length<n && anchors.length) sel.push(anchors[Math.floor(r()*anchors.length)]);
+  return sel;
+}
+
+/*** layouts existants ***/
+function layoutGrid(r,n,sc,ang,pos){const out=[],k=Math.ceil(Math.sqrt(n)),step=1.8/k;let i=0;for(let gx=0;gx<k;gx++)for(let gy=0;gy<k;gy++){if(i++>=n)break;let x=-0.9+(gx+0.5)*step,y=-0.9+(gy+0.5)*step; x=pos(x); y=pos(y); out.push({tx:x,ty:y,rot:ang(),sc:sc()})} return out}
+function layoutRosette(r,n,sc,ang,pos){const out=[];for(let i=0;i<n;i++){const ring=[0,1,2][Math.floor(r()*3)], rad=0.12*Math.pow(PHI,ring); const a=ang(); let x=rad*Math.cos(a), y=rad*Math.sin(a); x=pos(x); y=pos(y); out.push({tx:x,ty:y,rot:a,sc:sc()})} return out}
+function layoutPinwheel(r,n,sc,ang,pos){const out=[];const base=ang();for(let i=0;i<n;i++){const a=base+i*GOLD; let x=rr(r,-.06,.06), y=rr(r,-.06,.06); x=pos(x); y=pos(y); out.push({tx:x,ty:y,rot:a,sc:sc()})} return out}
+function layoutMirror(r,n,sc,ang,pos,phiPow){const out=[];const t=1/Math.pow(PHI,2+phiPow); const a=ang(); const s=sc(); out.push({tx:pos(0)-t,ty:pos(0),rot:a,sc:s}); out.push({tx:pos(0)+t,ty:pos(0),rot:a+Math.PI,sc:s}); for(let i=2;i<n;i++){out.push({tx:pos(rr(r,-.85,.85)),ty:pos(rr(r,-.85,.85)),rot:ang(),sc:sc()})} return out}
+function layoutRandom(r,n,sc,ang,pos){const out=[];for(let i=0;i<n;i++){out.push({tx:pos(rr(r,-.85,.85)),ty:pos(rr(r,-.85,.85)),rot:ang(),sc:sc()})} return out}
+
+/*** nouveaux layouts ***/
+function layoutRadialK(r,n,sc,ang,pos,K){const out=[];const base=ang();const rad=rr(r,0.12,0.32);for(let i=0;i<Math.max(n,K);i++){const a=base+(i%K)*2*Math.PI/K;const x=pos(rad*Math.cos(a)),y=pos(rad*Math.sin(a));out.push({tx:x,ty:y,rot:a,sc:sc()})}return out}
+const layoutRadial6=(r,n,sc,ang,pos)=>layoutRadialK(r,n,sc,ang,pos,6);
+const layoutRadial8=(r,n,sc,ang,pos)=>layoutRadialK(r,n,sc,ang,pos,8);
+
+function layoutDiagMirror(r,n,sc,ang,pos){const out=[];const a=ang(), s=sc(); const t=rr(r,0.12,0.22); out.push({tx:pos(-t),ty:pos(-t),rot:a,sc:s}); out.push({tx:pos(t),ty:pos(t),rot:a+Math.PI,sc:s}); while(out.length<n) out.push({tx:pos(rr(r,-.8,.8)),ty:pos(rr(r,-.8,.8)),rot:ang(),sc:sc()}); return out}
+function layoutImperfectMirror(r,n,sc,ang,pos){const out=[],a=ang(),s=sc(); const t=rr(r,0.12,0.22), j=rr(r,0.01,0.05); out.push({tx:pos(-t-j),ty:pos(0+j),rot:a,sc:s}); out.push({tx:pos(t+j),ty:pos(0-j),rot:a+Math.PI+rr(r,-.12,.12),sc:s*rr(r,0.9,1.1)}); while(out.length<n) out.push({tx:pos(rr(r,-.8,.8)),ty:pos(rr(r,-.8,.8)),rot:ang(),sc:sc()}); return out}
+
+function layoutHexGrid(r,n,sc,ang,pos){const out=[];const k=Math.ceil(Math.sqrt(n)),step=1.6/k;let i=0;for(let gy=0;gy<k;gy++){for(let gx=0;gx<k;gx++){if(i++>=n)break; let x=-0.8+(gx+0.5)*step + (gy%2?step/2:0), y=-0.8+(gy+0.5)*step*0.86; x=pos(x); y=pos(y); out.push({tx:x,ty:y,rot:ang(),sc:sc()});}} return out}
+
+function layoutVortex(r,n,sc,ang,pos){const out=[];const base=ang();for(let i=0;i<n;i++){const a=base+i*rr(r,0.2,0.5); const rad=0.06+i*(0.8/n)*0.06; const x=pos(rad*Math.cos(a)), y=pos(rad*Math.sin(a)); out.push({tx:x,ty:y,rot:a+rr(r,-.2,.2),sc:sc()});} return out}
+
+function layoutOrbits(r,n,sc,ang,pos){const out=[];const rings=[0.14,0.28,0.42]; let left=n; for(const rad of rings){const k=Math.max(3,Math.round(rad*18)); for(let i=0;i<k && left>0;i++,left--){const a=i*2*Math.PI/k+ang(); out.push({tx:pos(rad*Math.cos(a)),ty:pos(rad*Math.sin(a)),rot:a,sc:sc()});}} return out}
+
+function layoutSine(r,n,sc,ang,pos){const out=[];const A=rr(r,0.12,0.28), k=rr(r,1.5,3.0), phi=ang(); for(let i=0;i<n;i++){const t=-0.8+i*(1.6/(n-1)); const y=A*Math.sin(k*t*2*Math.PI+phi); out.push({tx:pos(t),ty:pos(y),rot:Math.atan2(y,1)+phi,sc:sc()});} return out}
+
+function layoutBrokenGrid(r,n,sc,ang,pos){const out=[];const base=layoutGrid(r,n,sc,ang,pos); for(const s of base){s.tx+=rr(r,-.06,.06); s.ty+=rr(r,-.06,.06); s.rot+=rr(r,-.25,.25); s.sc*=rr(r,0.9,1.1); out.push(s);} return out}
+
+function layoutOffset(r,n,sc,ang,pos){const out=[];const a=ang();const s0=sc();const dx=rr(r,-.06,.06), dy=rr(r,-.06,.06); for(let i=0;i<n;i++){out.push({tx:pos(dx*i/n),ty:pos(dy*i/n),rot:a,sc:s0*rr(r,0.95,1.05)});} return out}
+
+function layoutGlitch(r,n,sc,ang,pos){const out=[];for(let i=0;i<n;i++){out.push({tx:pos(rr(r,-.05,.05)),ty:pos(rr(r,-.05,.05)),rot:ang()+rr(r,-.1,.1),sc:sc()*rr(r,0.95,1.05)});} return out}
+
+function layoutScaleRamp(r,n,sc,ang,pos){const out=[];const a=ang(); for(let i=0;i<n;i++){const k=i/(n-1); out.push({tx:pos(0),ty:pos(0),rot:a+k*GOLD,sc:rr(r,0.5,1.0)*(1-k)+0.2});} return out}
+
+function layoutFiboSpiral(r,n,sc,ang,pos){const out=[];let rad=0.06, a=ang(); for(let i=0;i<n;i++){const x=pos(rad*Math.cos(a)),y=pos(rad*Math.sin(a)); out.push({tx:x,ty:y,rot:a,sc:sc()}); a+=GOLD; rad*=PHI*0.92;} return out}
+
+function layoutLogSpiral(r,n,sc,ang,pos){const out=[];const k=rr(r,0.18,0.28); let a=ang(), rad=0.06; for(let i=0;i<n;i++){const x=pos(rad*Math.cos(a)),y=pos(rad*Math.sin(a)); out.push({tx:x,ty:y,rot:a,sc:sc()}); a+=0.45; rad*=1+k*0.04;} return out}
+
+/*** compositeur esthétique (enchaîne des modules) ***/
+function layoutComposer(r, total, sc, ang, pos, phiPow, minD, margin){
+  const palette=[
+    {fn:'rosette4', w:2},
+    {fn:'mirror',   w:2},
+    {fn:'pinwheel', w:2},
+    {fn:'grid',     w:1},
+    {fn:'random',   w:1},
+    {fn:'brokenGrid', w:1},
+    {fn:'hexgrid',  w:1},
+    {fn:'radial6',  w:1},
+    {fn:'vortex',   w:1},
+    {fn:'orbits',   w:1},
+    {fn:'fiboSpiral', w:1}
+  ];
+  const seq=[]; for(const m of palette) for(let i=0;i<m.w;i++) seq.push(m.fn);
+
+  const anchors=goldenAnchors(phiPow, margin);
+  const need=total;
+  const take = (n)=>pickSpaced(r, anchors, n, minD);
+
+  const out=[]; let remaining=need;
+  while(remaining>0){
+    const mod=seq[Math.floor(r()*seq.length)];
+    const n = Math.min(remaining, mod==='grid'?4:3);
+    remaining -= n;
+
+    if(mod==='rosette4'){
+      const pts=take(n); for(const p of pts){const a=ang(); out.push({tx:pos(p.x),ty:pos(p.y),rot:a,sc:sc()});}
+    } else if(mod==='mirror'){
+      const t=1/Math.pow(PHI,2+phiPow); const a=ang(); const c=take(1)[0]||{x:0,y:0};
+      out.push({tx:pos(c.x-t),ty:pos(c.y),rot:a,sc:sc()});
+      out.push({tx:pos(c.x+t),ty:pos(c.y),rot:a+Math.PI,sc:sc()});
+    } else if(mod==='pinwheel'){
+      const base=ang(); const c=take(1)[0]||{x:0,y:0};
+      for(let i=0;i<n;i++){const a=base+i*GOLD; out.push({tx:pos(c.x),ty:pos(c.y),rot:a,sc:sc()});}
+    } else if(mod==='grid' || mod==='brokenGrid'){
+      const pts=take(n); for(const p of pts){ out.push({tx:pos(p.x),ty:pos(p.y),rot:ang(),sc:sc()}); }
+      if(mod==='brokenGrid'){ for(const s of out.slice(-n)){ s.tx+=rr(r,-.05,.05); s.ty+=rr(r,-.05,.05); s.rot+=rr(r,-.2,.2); } }
+    } else if(mod==='hexgrid'){
+      out.push(...layoutHexGrid(r,n,sc,ang,pos));
+    } else if(mod==='radial6'){
+      out.push(...layoutRadial6(r,n,sc,ang,pos));
+    } else if(mod==='vortex'){
+      out.push(...layoutVortex(r,n,sc,ang,pos));
+    } else if(mod==='orbits'){
+      out.push(...layoutOrbits(r,n,sc,ang,pos));
+    } else if(mod==='fiboSpiral'){
+      out.push(...layoutFiboSpiral(r,n,sc,ang,pos));
+    } else {
+      const pts=take(n); for(const p of pts){ out.push({tx:pos(p.x),ty:pos(p.y),rot:ang(),sc:sc()}); }
+    }
+  }
+  return out;
+}
+
+/*** main generation ***/
+const $=id=>document.getElementById(id);
+const thumbs=$("thumbs"), status=$("status"), go=$("go"), zipBtn=$("zip"); let lastFiles=[];
+async function fileToDataURL(file){return new Promise(res=>{const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(file);});}
+
+document.getElementById('go').addEventListener('click', generate);
+document.getElementById('zip').addEventListener('click', async ()=>{
+  if(!lastFiles.length) return; const zip=new JSZip(); const f=zip.folder("fibo_phi_batch");
+  for(const x of lastFiles) f.file(x.name, x.blob);
+  const blob=await zip.generateAsync({type:"blob",compression:"DEFLATE"}); saveAs(blob,"fibo_phi_batch.zip");
+});
+
+async function generate(){
+  const file=$("base").files[0]; if(!file){alert("Choisis d’abord TON PNG de base.");return;}
+  go.disabled=true; zipBtn.disabled=true; lastFiles=[]; thumbs.innerHTML="";
+  const N=+$("count").value, W=+$("size").value, H=W, fmt=$("format").value;
+  const guides=$("guides").value, types=Array.from($("types").selectedOptions).map(o=>o.value);
+  const per=+$("stampsPer").value, sMin=+$("scaleMin").value, sMax=+$("scaleMax").value;
+  const mirror=$("mirrorMode").value, phiMode=$("phiMode").value, phiPow=+$("phiPower").value;
+  const esth=$("esthetic").value==="on", minD=+$("minDist").value, margin=+$("margin").value;
+  const seed=$("seed").value===""?Math.floor(Math.random()*1e9):+$("seed").value; const r=rngSeed(seed);
+  const img=await new Promise(res=>{const im=new Image(); im.onload=()=>res(im); im.src=URL.createObjectURL(file);});
+  const baseData=await fileToDataURL(file);
+
+  status.innerHTML=`<small>Génération… (seed ${seed})</small>`;
+
+  const phiOn=(phiMode!=="off"), strict=(phiMode==="strict");
+  const scaleFn = phiOn ? (()=>phiScale(r,sMin,sMax)) : (()=>rr(r,sMin,sMax));
+  const angleFn = ()=> phiOn ? ( (Math.floor(rr(r,-12,12))||1)*GOLD ) : rr(r,-Math.PI,Math.PI);
+  const placeFn = (x)=> phiOn ? snapPhi(x, phiPow+(strict?1:0)) : x;
+
+  for(let i=0;i<N;i++){
+    const canvas=Object.assign(document.createElement('canvas'),{width:W,height:H}); const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
+    if(guides!=='none'){ctx.save();ctx.strokeStyle="#000";ctx.globalAlpha=guides==='frame'?0.4:0.25;ctx.lineWidth=1.5;const x0=(0.05+margin)*W,y0=(0.05+margin)*H,w=(0.9-2*margin)*W,h=(0.9-2*margin)*H;ctx.strokeRect(x0,y0,w,h);if(guides==='gridlight'){const g=6;for(let k=1;k<g;k++){const x=x0+w*k/g,y=y0+h*k/g;ctx.beginPath();ctx.moveTo(x,y0);ctx.lineTo(x,y0+h);ctx.stroke();ctx.beginPath();ctx.MoveTo?0:0;ctx.moveTo(x0,y);ctx.lineTo(x0+w,y);ctx.stroke();}}ctx.restore();}
+    let Mglob = mul(tr(rr(r,-0.01,0.01), rr(r,-0.01,0.01)), rot(rr(r,-0.12,0.12)));
+
+    const type=pick(r,types);
+    let stamps=[];
+    if(type==='composer') stamps=layoutComposer(r, per, scaleFn, angleFn, placeFn, phiPow, minD, margin);
+    else if(type==='grid') stamps=layoutGrid(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='rosette4') stamps=layoutRosette(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='pinwheel') stamps=layoutPinwheel(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='mirror') stamps=layoutMirror(r,per,scaleFn,angleFn,placeFn,phiPow);
+    else if(type==='random') stamps=layoutRandom(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='radial6') stamps=layoutRadial6(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='radial8') stamps=layoutRadial8(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='diagMirror') stamps=layoutDiagMirror(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='imperfectMirror') stamps=layoutImperfectMirror(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='hexgrid') stamps=layoutHexGrid(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='vortex') stamps=layoutVortex(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='orbits') stamps=layoutOrbits(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='sinepath') stamps=layoutSine(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='brokenGrid') stamps=layoutBrokenGrid(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='offset') stamps=layoutOffset(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='glitch') stamps=layoutGlitch(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='scaleRamp') stamps=layoutScaleRamp(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='fiboSpiral') stamps=layoutFiboSpiral(r,per,scaleFn,angleFn,placeFn);
+    else if(type==='logSpiral') stamps=layoutLogSpiral(r,per,scaleFn,angleFn,placeFn);
+    else stamps=layoutRandom(r,per,scaleFn,angleFn,placeFn);
+
+    for(const s of stamps){
+      const flip=(mirror==='always')||(mirror==='some'&&r()<.4);
+      const M=mul(Mglob, mul(tr(s.tx,s.ty), mul(rot(s.rot), mul(scl(s.sc), flip?mat(-1,0,0,1,0,0):mat(1,0,0,1,0,0)))));
+      drawStamp(ctx,img,M,W,H);
+    }
+
+    const thumb=canvas.cloneNode(true); thumb.getContext('2d').drawImage(canvas,0,0); thumbs.appendChild(thumb);
+
+    if(fmt==='png'){
+      const blob=await new Promise(res=>canvas.toBlob(res,'image/png',1.0));
+      lastFiles.push({name:`fibo_phi_${String(i+1).padStart(3,'0')}.png`, blob});
+    }else{
+      const parts=[`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><image id="stamp" href="${baseData}" width="1" height="1" x="-0.5" y="-0.5"/></defs>`];
+      if(guides!=='none'){const x0=(0.05+margin)*W,y0=(0.05+margin)*H,w=(0.9-2*margin)*W,h=(0.9-2*margin)*H;parts.push(`<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="none" stroke="#000" stroke-opacity="${guides==='frame'?0.4:0.25}" stroke-width="1.5"/>`);}
+      for(const s of stamps){const flip=(mirror==='always');const M=mul(Mglob, mul(tr(s.tx,s.ty), mul(rot(s.rot), mul(scl(s.sc), flip?mat(-1,0,0,1,0,0):mat(1,0,0,1,0,0)))));const A=M.a*0.9*W,C=M.c*0.9*W,B=-M.b*0.9*H,D=-M.d*0.9*H,E=(M.e*0.9+0.5)*W,F=(0.5-M.f*0.9)*H;parts.push(`<use href="#stamp" transform="matrix(${A} ${B} ${C} ${D} ${E} ${F})"/>`);}
+      parts.push(`</svg>`); const blob=new Blob([parts.join("")],{type:"image/svg+xml"}); lastFiles.push({name:`fibo_phi_${String(i+1).padStart(3,'0')}.svg`, blob});
+    }
+    status.innerHTML=`<small>Image ${i+1}/${N}…</small>`; await new Promise(r=>setTimeout(r));
+  }
+  status.innerHTML=`<small>Prêt. ${N} fichiers générés (seed ${seed}).</small>`; zipBtn.disabled=false; go.disabled=false;
+}
+</script>
+</body>
+</html>
